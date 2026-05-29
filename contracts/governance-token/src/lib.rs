@@ -319,6 +319,10 @@ impl GovernanceTokenContract {
             panic!("allowance amount must be non-negative");
         }
 
+        if expiry <= env.ledger().sequence() {
+            panic!("expiry must be a future ledger sequence");
+        }
+
         let _ttl_key = DataKey::Allowance(owner, spender);
         env.storage()
             .persistent()
@@ -359,7 +363,8 @@ impl GovernanceTokenContract {
             .get(&DataKey::TotalSupply)
             .unwrap_or(0);
 
-        if current_supply + amount > MAX_SUPPLY {
+        let new_supply = current_supply.checked_add(amount).expect("supply overflow");
+        if new_supply > MAX_SUPPLY {
             panic!("exceeds max supply");
         }
 
